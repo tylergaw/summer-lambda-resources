@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ExternalId:
+    Type: String
+    Description: 'Your Summer organization id. Should be like org_XXXXXXX'
+
+Resources:
+  SummerInvokeLambdaPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      # You can change the name of the policy to anything you need
+      PolicyName: 'SummerInvokeLambda'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'InvokePermission'
+            Effect: 'Allow'
+            Action: 'lambda:InvokeFunction'
+            # This has access to all lambda functions. To limit it, replace '*' with the arn of one the lambda(s) you want Summer to be able to invoke.
+            # Can be a single lambda like; 
+            #    Resource: 'arn:aws:lambda:region:account-id:function:function-name'
+            # Or multiple lambdas like;
+            #    Resource:
+            #        - arn:aws:lambda:region:account-id:function:function-name'
+            #        - arn:aws:lambda:region:account-id:function:function-name-2'
+            Resource: '*'
+      Roles:
+        - Ref: 'SummerLambdaRole'
+
+  SummerLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      # You can change the name of the role to anything you need
+      RoleName: 'SummerLambdaRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              # This is Summer's AWS account
+              AWS: 'arn:aws:iam::415991094359:root'
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalId
+
+Outputs:
+  RoleArn:
+    Description: 'ARN of the newly created IAM Role'
+    Value: !GetAtt SummerLambdaRole.Arn
+  PolicyArn:
+    Description: 'ARN of the newly created IAM Policy'
+    Value: !Ref SummerInvokeLambdaPolicy
